@@ -1,0 +1,106 @@
+#importing the packages
+import numpy as np
+import pandas as pd
+from math import sqrt
+
+#DATASET: Wheat dataset that is available in the internet
+
+dp= pd.read_csv(r"C:\Users\admin\Downloads\seeds\Seed_Data.csv")
+#shuffling the dataset 
+dp= dp.sample(frac=1).reset_index(drop=True)
+
+#split train and test using pandas iloc
+train= dp.iloc[:148,:]
+test=dp.iloc[148:210,:]
+#print(test.shape)
+#print(train)
+#print(test)
+
+# Defining the Euclidean Distance function
+
+def Eucl_Dist(r1,r2):
+    d=0.0
+   # print("r1 =", r1) #r1=sample point
+   # print("r2 =", r2)
+    for i in range(len(r1)):
+        d = d+ ((r1[i]-r2[i])**2)    
+    #print("D=", d)
+    return (sqrt(d))
+
+#removing the last column "target" 
+tr=train.iloc[0:148,:-1]
+r11=test.iloc[0:62,:-1]
+#Converting the pandas dataframe to numpy array 
+t=tr.to_numpy()
+r1=r11.to_numpy()
+#print("sample point",  r1)
+#print("t=",t)
+
+#creating an empty list for "Euclidean distances" to be appended
+a=[0]*(len(t))
+predicted_class=[0]*(len(r1))
+
+for i in range((len(r1))):
+    #print("r[%d]="%(i),end=' ')
+    #print(r1[i])
+    for j in range((len(t))):
+        
+        #print("t[%d]="%(j),end=' ')
+        #print(t[j])
+        
+        #print("r1[i] =", r1[i])
+        e=Eucl_Dist(r1[i],t[j])
+        a[j]=e
+    #adding "a" to the "train" dataframe as "ED"(Euclidean Distance)
+    train.insert(8, "ED", a , True)
+    #print(train)
+    
+    #sorting the distances in the ascending order
+    df=train.sort_values(by=['ED'], ascending= True)
+    #print(df)
+
+    #filtering the top-k dataframe 
+    topk_df= df.iloc[0:3,:] #in this case k=3
+    #print(topk_df)
+
+    #filtering target-class
+    #Considering only the "target" column of the filtered k-distances 
+    #Since it is in dataframe, I am converting it to list
+    target_class= topk_df['target'].tolist()
+    #print(target_class)
+
+    #frequency of the most occuring class
+    frequency={}
+    for item in target_class:
+       # checking the element in dictionary
+        if item in frequency:
+          # incrementing the counr
+            frequency[item] += 1
+        else:
+          # initializing the count
+            frequency[item] = 1
+
+    # printing the frequency
+    #print("Class frequency count =",  frequency)
+
+    #prediction
+    predicted_class[i]= max(frequency, key= lambda x: frequency[x])
+    #print("Predicted class =", predicted_class)
+    #Dropping the "ED(Euclidean Distance)" column, because this loop is for finding one test data point
+    #for every test data point, the loop will start afresh which will get get confused by the existing "ED".
+    train.drop(['ED'], axis=1, inplace= True)
+#print(predicted_class)
+
+#Observed target
+obs_class= test['target'].tolist()
+print(obs_class)
+
+
+#Accuracy Stat
+accuracy_count=0
+for i in range(len(obs_class)):
+    if predicted_class[i]== obs_class[i]:
+        accuracy_count = accuracy_count + 1
+#Accuracy percentage
+print("Accuracy Percentage =", ((accuracy_count/len(obs_class))*100))
+        
